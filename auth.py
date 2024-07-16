@@ -6,8 +6,10 @@ import bcrypt
 from datetime import datetime
 import pytz
 
+
 def check_password(hashed_password, plain_password):
     return bcrypt.checkpw(plain_password.encode('utf-8'), hashed_password.encode('utf-8'))
+
 
 def login_user(login, password):
     """Аутентификация пользователя"""
@@ -25,6 +27,7 @@ def login_user(login, password):
     finally:
         session.close()
 
+
 def change_own_password(user_id, old_password, new_password):
     """Изменение пароля пользователем"""
     session = get_session()
@@ -37,4 +40,3 @@ def change_own_password(user_id, old_password, new_password):
     else:
         session.close()
         return False
-

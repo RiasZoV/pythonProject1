@@ -263,7 +263,7 @@ async def view_profile(user_login: str, current_user: User = Depends(get_current
 
 @app.post("/users/{user_login}/logout", dependencies=[Depends(get_current_active_user)])
 async def logout(user_login: str, current_user: User = Depends(get_current_active_user)):
-    if current_user.login != user_login:
+    if current_user.role_id != 3 and current_user.login != user_login:
         raise HTTPException(status_code=403, detail="Нельзя завершить сеанс другого пользователя")
     return {"message": "Сеанс завершен успешно"}
 

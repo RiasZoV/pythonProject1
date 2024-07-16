@@ -51,5 +51,3 @@ class Function(Base):
 
 # Создание всех таблиц в бд
 Base.metadata.create_all(engine)
-
-# print("База данных и таблицы созданы успешно!")

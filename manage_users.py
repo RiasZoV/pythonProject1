@@ -23,7 +23,7 @@ def add_user(login, password, role_name, age, subordinates=None):
         if session.query(User).filter_by(login=login).first():
             print(f"Пользователь с логином '{login}' уже существует.")
             session.close()
-            return
+            return "Пользователь с таким логином уже существует."
 
         role = session.query(Role).filter_by(name=role_name).one()
         hashed_password = hash_password(password)
@@ -40,9 +40,9 @@ def add_user(login, password, role_name, age, subordinates=None):
                     print(f"Подчиненный пользователь '{sub_login}' не найден.")
             session.commit()
 
-        print(f"Пользователь {login} добавлен.")
+        return "Пользователь добавлен успешно"
     except NoResultFound:
-        print(f"Роль '{role_name}' не найдена.")
+        return f"Роль '{role_name}' не найдена."
     finally:
         session.close()
 
@@ -163,4 +163,18 @@ def change_subordinates(user_login, new_subordinates_logins):
         print(f"Пользователь или подчиненные не найдены.")
     finally:
         session.close()
+
+def is_subordinate(superior_id, subordinate_id):
+    """Проверка, является ли пользователь подчиненным другого пользователя"""
+    session = get_session()
+    try:
+        superior = session.query(User).filter_by(id=superior_id).one()
+        return any(sub.id == subordinate_id for sub in superior.subordinates)
+    except NoResultFound:
+        return False
+    finally:
+        session.close()
+
+
+
 

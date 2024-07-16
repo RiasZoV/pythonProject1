@@ -17,14 +17,13 @@ def login_user(login, password):
         if check_password(user.password, password):
             user.last_login = datetime.now(pytz.timezone('Europe/Moscow'))
             session.commit()
-            session.close()
-            return user
+            return {"login": user.login}
         else:
-            session.close()
             return None
     except NoResultFound:
-        session.close()
         return None
+    finally:
+        session.close()
 
 def change_own_password(user_id, old_password, new_password):
     """Изменение пароля пользователем"""
@@ -38,5 +37,4 @@ def change_own_password(user_id, old_password, new_password):
     else:
         session.close()
         return False
-
 

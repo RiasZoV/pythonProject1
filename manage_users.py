@@ -3,8 +3,10 @@ from database import User, Role, Function
 from session_management import get_session
 import bcrypt
 
+
 def hash_password(password):
     return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+
 
 def get_user_by_login(login):
     session = get_session()
@@ -16,14 +18,14 @@ def get_user_by_login(login):
     finally:
         session.close()
 
+
 def add_user(login, password, role_name, age, subordinates=None):
     """Добавление нового пользователя в бд"""
     session = get_session()
     try:
         if session.query(User).filter_by(login=login).first():
-            print(f"Пользователь с логином '{login}' уже существует.")
             session.close()
-            return "Пользователь с таким логином уже существует."
+            return f"Пользователь с логином '{login}' уже существует."
 
         role = session.query(Role).filter_by(name=role_name).one()
         hashed_password = hash_password(password)
@@ -37,14 +39,18 @@ def add_user(login, password, role_name, age, subordinates=None):
                     subordinate = session.query(User).filter_by(login=sub_login).one()
                     new_user.subordinates.append(subordinate)
                 except NoResultFound:
-                    print(f"Подчиненный пользователь '{sub_login}' не найден.")
+                    session.close()
+                    return f"Подчиненный пользователь '{sub_login}' не найден."
             session.commit()
 
-        return "Пользователь добавлен успешно"
+        session.close()
+        return f"Пользователь {login} добавлен успешно."
     except NoResultFound:
+        session.close()
         return f"Роль '{role_name}' не найдена."
     finally:
         session.close()
+
 
 def add_role(name):
     """Добавление новой роли в бд"""
@@ -56,6 +62,7 @@ def add_role(name):
     session.commit()
     session.close()
     return "Роль добавлена успешно"
+
 
 def add_function(name, access_level, role_name):
     """Добавление новой функции в бд"""
@@ -73,12 +80,14 @@ def add_function(name, access_level, role_name):
     finally:
         session.close()
 
+
 def list_roles():
     """Вывод списка всех ролей"""
     session = get_session()
     roles = session.query(Role).all()
     session.close()
     return roles
+
 
 def get_role_by_number(number):
     """Получение роли по номеру"""
@@ -87,6 +96,7 @@ def get_role_by_number(number):
         return roles[number - 1]
     else:
         return None
+
 
 def list_subordinates(user_id):
     """Вывод списка подчиненных для пользователя"""
@@ -100,6 +110,7 @@ def list_subordinates(user_id):
     finally:
         session.close()
 
+
 def change_password(user_id, new_password):
     """Изменение пароля для пользователя"""
     session = get_session()
@@ -112,6 +123,7 @@ def change_password(user_id, new_password):
         return "Пользователь не найден"
     finally:
         session.close()
+
 
 def change_user_role(user_id, new_role_name):
     """Изменение роли пользователя"""
@@ -127,6 +139,7 @@ def change_user_role(user_id, new_role_name):
     finally:
         session.close()
 
+
 def delete_user(user_id):
     """Удаление пользователя"""
     session = get_session()
@@ -140,6 +153,7 @@ def delete_user(user_id):
     finally:
         session.close()
 
+
 def list_users():
     """Вывод списка всех пользователей"""
     session = get_session()
@@ -147,6 +161,7 @@ def list_users():
     users_list = [{"login": user.login, "role_id": user.role_id, "age": user.age} for user in users]
     session.close()
     return users_list
+
 
 def change_subordinates(user_login, new_subordinates_logins):
     """Изменение списка подчиненных пользователя"""
@@ -158,23 +173,8 @@ def change_subordinates(user_login, new_subordinates_logins):
             subordinate = session.query(User).filter_by(login=login).one()
             user.subordinates.append(subordinate)
         session.commit()
-        print(f"Список подчиненных для пользователя {user.login} обновлен.")
+        return "Подчиненные обновлены успешно"
     except NoResultFound:
-        print(f"Пользователь или подчиненные не найдены.")
+        return "Пользователь или подчиненные не найдены"
     finally:
         session.close()
-
-def is_subordinate(superior_id, subordinate_id):
-    """Проверка, является ли пользователь подчиненным другого пользователя"""
-    session = get_session()
-    try:
-        superior = session.query(User).filter_by(id=superior_id).one()
-        return any(sub.id == subordinate_id for sub in superior.subordinates)
-    except NoResultFound:
-        return False
-    finally:
-        session.close()
-
-
-
-

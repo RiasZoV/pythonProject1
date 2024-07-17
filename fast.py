@@ -115,7 +115,7 @@ async def get_subordinates(user_login: str, current_user: User = Depends(get_cur
     session = Session()
     try:
         user = session.query(User).options(joinedload(User.subordinates)).filter_by(login=user_login).one()
-        if current_user.role_id == 2 and user.role_id not in [1, 2]:
+        if current_user.role_id == 2 and user.role_id not in[1, 2]:
             raise HTTPException(status_code=403, detail="Недостаточно прав для просмотра подчиненных")
         subordinates = user.subordinates
         if not subordinates:
@@ -148,7 +148,7 @@ async def update_password(user_login: str, request: Request, current_user: User 
         session.close()
 
 
-@app.post("/users/{user_login}/admin_change_password/", dependencies=[Depends(get_current_admin_user)])
+@app.post("/admin/users/{user_login}/change_password/", dependencies=[Depends(get_current_admin_user)])
 async def admin_update_password(user_login: str, request: Request,
                                 current_user: User = Depends(get_current_admin_user)):
     data = await request.json()
@@ -204,7 +204,11 @@ async def remove_user(user_login: str):
 
 @app.post("/users/{user_login}/change_subordinates/", dependencies=[Depends(get_current_admin_user)])
 async def update_subordinates(user_login: str, request: Request):
-    data = await request.json()
+    try:
+        data = await request.json()
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Invalid JSON data: {str(e)}")
+
     session = Session()
     try:
         result = change_subordinates(user_login, data["new_subordinates_logins"])

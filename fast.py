@@ -352,6 +352,8 @@ async def update_subordinates(user_login: str, request: Request):
         print(f"Получено сырое тело: {raw_body.decode('utf-8')}")  # Отладочная информация
         data = json.loads(raw_body)
         print(f"Полученные данные: {data}")  # Отладочная информация
+        if "new_subordinates_logins" not in data:
+            raise HTTPException(status_code=400, detail="Нет поля 'new_subordinates_logins'")
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Некорректные данные JSON: {str(e)}")
 
@@ -426,3 +428,5 @@ if __name__ == "__main__":
         uvicorn.run(app, host="127.0.0.1", port=8001)
     except KeyboardInterrupt:
         print("")
+
+

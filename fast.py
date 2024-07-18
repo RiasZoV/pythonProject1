@@ -10,6 +10,7 @@ from sqlalchemy.orm import sessionmaker, joinedload
 from sqlalchemy.exc import NoResultFound
 from database import engine
 import uvicorn
+import json
 
 app = FastAPI()
 
@@ -19,6 +20,15 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 @app.post("/login")
 async def login(request: Request):
+    """
+    Аутентификация пользователя.
+
+    Параметры:
+    - request (Request): Запрос с JSON-данными, содержащими 'username' и 'password'.
+
+    Возвращает:
+    - JSON-ответ с токеном доступа и типом токена.
+    """
     data = await request.json()
     user_data = login_user(data['username'], data['password'])
     if not user_data:
@@ -27,6 +37,15 @@ async def login(request: Request):
 
 
 async def get_current_user(token: str = Depends(oauth2_scheme)):
+    """
+    Получение текущего пользователя по токену.
+
+    Параметры:
+    - token (str): Токен доступа.
+
+    Возвращает:
+    - User: Объект пользователя.
+    """
     session = Session()
     try:
         user = session.query(User).filter_by(login=token).options(joinedload(User.subordinates)).one()
@@ -38,24 +57,60 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
 
 
 async def get_current_active_user(current_user: User = Depends(get_current_user)):
+    """
+    Проверка активности текущего пользователя.
+
+    Параметры:
+    - current_user (User): Объект текущего пользователя.
+
+    Возвращает:
+    - User: Объект пользователя.
+    """
     if current_user:
         return current_user
     raise HTTPException(status_code=401, detail="Неактивный пользователь")
 
 
 async def get_current_admin_user(current_user: User = Depends(get_current_active_user)):
+    """
+    Проверка прав администратора у текущего пользователя.
+
+    Параметры:
+    - current_user (User): Объект текущего пользователя.
+
+    Возвращает:
+    - User: Объект пользователя с правами администратора.
+    """
     if current_user.role_id != 3:  # Предположим, что 3 - это id роли администратора
         raise HTTPException(status_code=403, detail="Недостаточно прав")
     return current_user
 
 
 async def get_current_manager_user(current_user: User = Depends(get_current_active_user)):
+    """
+    Проверка прав менеджера у текущего пользователя.
+
+    Параметры:
+    - current_user (User): Объект текущего пользователя.
+
+    Возвращает:
+    - User: Объект пользователя с правами менеджера.
+    """
     if current_user.role_id not in [2, 3]:  # Предположим, что 2 - это id роли менеджера
         raise HTTPException(status_code=403, detail="Недостаточно прав")
     return current_user
 
 
 async def get_current_regular_user(current_user: User = Depends(get_current_active_user)):
+    """
+    Проверка прав обычного пользователя у текущего пользователя.
+
+    Параметры:
+    - current_user (User): Объект текущего пользователя.
+
+    Возвращает:
+    - User: Объект обычного пользователя.
+    """
     if current_user.role_id not in [1, 2, 3]:  # Предположим, что 1 - это id роли пользователя
         raise HTTPException(status_code=403, detail="Недостаточно прав")
     return current_user
@@ -63,6 +118,15 @@ async def get_current_regular_user(current_user: User = Depends(get_current_acti
 
 @app.post("/users/", dependencies=[Depends(get_current_admin_user)])
 async def create_user(request: Request):
+    """
+    Создание нового пользователя.
+
+    Параметры:
+    - request (Request): Запрос с JSON-данными, содержащими 'login', 'password', 'age', 'role_name'.
+
+    Возвращает:
+    - JSON-ответ с сообщением об успешном создании пользователя.
+    """
     data = await request.json()
     required_fields = ["login", "password", "age", "role_name"]
     for field in required_fields:
@@ -76,6 +140,12 @@ async def create_user(request: Request):
 
 @app.get("/users/", dependencies=[Depends(get_current_admin_user)])
 async def get_users():
+    """
+    Получение списка всех пользователей.
+
+    Возвращает:
+    - JSON-ответ со списком пользователей.
+    """
     session = Session()
     try:
         users = list_users()
@@ -88,6 +158,12 @@ async def get_users():
 
 @app.get("/roles/", dependencies=[Depends(get_current_admin_user)])
 async def get_roles():
+    """
+    Получение списка всех ролей.
+
+    Возвращает:
+    - JSON-ответ со списком ролей.
+    """
     session = Session()
     try:
         roles = session.query(Role).all()
@@ -100,6 +176,12 @@ async def get_roles():
 
 @app.get("/functions/", dependencies=[Depends(get_current_admin_user)])
 async def get_functions():
+    """
+    Получение списка всех функций.
+
+    Возвращает:
+    - JSON-ответ со списком функций.
+    """
     session = Session()
     try:
         functions = session.query(Function).all()
@@ -112,10 +194,19 @@ async def get_functions():
 
 @app.get("/users/{user_login}/subordinates", dependencies=[Depends(get_current_manager_user)])
 async def get_subordinates(user_login: str, current_user: User = Depends(get_current_manager_user)):
+    """
+    Получение списка подчиненных пользователя.
+
+    Параметры:
+    - user_login (str): Логин пользователя.
+
+    Возвращает:
+    - JSON-ответ со списком подчиненных.
+    """
     session = Session()
     try:
         user = session.query(User).options(joinedload(User.subordinates)).filter_by(login=user_login).one()
-        if current_user.role_id == 2 and user.role_id not in[1, 2]:
+        if current_user.role_id == 2 and user.role_id not in [1, 2]:
             raise HTTPException(status_code=403, detail="Недостаточно прав для просмотра подчиненных")
         subordinates = user.subordinates
         if not subordinates:
@@ -131,6 +222,16 @@ async def get_subordinates(user_login: str, current_user: User = Depends(get_cur
 
 @app.post("/users/{user_login}/change_password/", dependencies=[Depends(get_current_active_user)])
 async def update_password(user_login: str, request: Request, current_user: User = Depends(get_current_active_user)):
+    """
+    Изменение пароля текущего пользователя.
+
+    Параметры:
+    - user_login (str): Логин пользователя.
+    - request (Request): Запрос с JSON-данными, содержащими 'old_password' и 'new_password'.
+
+    Возвращает:
+    - JSON-ответ с сообщением об успешном изменении пароля.
+    """
     data = await request.json()
     session = Session()
     try:
@@ -149,8 +250,17 @@ async def update_password(user_login: str, request: Request, current_user: User 
 
 
 @app.post("/admin/users/{user_login}/change_password/", dependencies=[Depends(get_current_admin_user)])
-async def admin_update_password(user_login: str, request: Request,
-                                current_user: User = Depends(get_current_admin_user)):
+async def admin_update_password(user_login: str, request: Request, current_user: User = Depends(get_current_admin_user)):
+    """
+    Изменение пароля любого пользователя администратором.
+
+    Параметры:
+    - user_login (str): Логин пользователя.
+    - request (Request): Запрос с JSON-данными, содержащими 'new_password'.
+
+    Возвращает:
+    - JSON-ответ с сообщением об успешном изменении пароля.
+    """
     data = await request.json()
     session = Session()
     try:
@@ -169,6 +279,16 @@ async def admin_update_password(user_login: str, request: Request,
 
 @app.post("/users/{user_login}/change_role/", dependencies=[Depends(get_current_admin_user)])
 async def update_role(user_login: str, request: Request):
+    """
+    Изменение роли пользователя.
+
+    Параметры:
+    - user_login (str): Логин пользователя.
+    - request (Request): Запрос с JSON-данными, содержащими 'new_role_name'.
+
+    Возвращает:
+    - JSON-ответ с сообщением об успешном изменении роли.
+    """
     data = await request.json()
     session = Session()
     try:
@@ -187,6 +307,15 @@ async def update_role(user_login: str, request: Request):
 
 @app.post("/users/{user_login}/delete/", dependencies=[Depends(get_current_admin_user)])
 async def remove_user(user_login: str):
+    """
+    Удаление пользователя.
+
+    Параметры:
+    - user_login (str): Логин пользователя.
+
+    Возвращает:
+    - JSON-ответ с сообщением об успешном удалении пользователя.
+    """
     session = Session()
     try:
         user = session.query(User).filter_by(login=user_login).one()
@@ -204,10 +333,27 @@ async def remove_user(user_login: str):
 
 @app.post("/users/{user_login}/change_subordinates/", dependencies=[Depends(get_current_admin_user)])
 async def update_subordinates(user_login: str, request: Request):
+    """
+    Изменение подчиненных пользователя.
+
+    Параметры:
+    - user_login (str): Логин пользователя.
+    - request (Request): Запрос с JSON-данными, содержащими 'new_subordinates_logins'.
+
+    Возвращает:
+    - JSON-ответ с сообщением об успешном обновлении подчиненных.
+    """
+    if request.headers.get('content-type') != 'application/json':
+        raise HTTPException(status_code=400, detail="Тип содержимого должен быть application/json")
     try:
-        data = await request.json()
+        raw_body = await request.body()
+        if not raw_body:
+            raise HTTPException(status_code=400, detail="Тело запроса пусто")
+        print(f"Получено сырое тело: {raw_body.decode('utf-8')}")  # Отладочная информация
+        data = json.loads(raw_body)
+        print(f"Полученные данные: {data}")  # Отладочная информация
     except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Invalid JSON data: {str(e)}")
+        raise HTTPException(status_code=400, detail=f"Некорректные данные JSON: {str(e)}")
 
     session = Session()
     try:
@@ -225,6 +371,16 @@ async def update_subordinates(user_login: str, request: Request):
 
 @app.get("/users/{user_login}/profile", dependencies=[Depends(get_current_active_user)])
 async def view_profile(user_login: str, current_user: User = Depends(get_current_active_user)):
+    """
+    Просмотр профиля пользователя.
+
+    Параметры:
+    - user_login (str): Логин пользователя.
+    - current_user (User): Объект текущего пользователя.
+
+    Возвращает:
+    - JSON-ответ с данными профиля пользователя.
+    """
     session = Session()
     try:
         user = session.query(User).options(joinedload(User.subordinates)).filter_by(login=user_login).one()
@@ -232,13 +388,11 @@ async def view_profile(user_login: str, current_user: User = Depends(get_current
         if current_user.role_id == 3 or current_user.login == user_login:
             return {"login": user.login, "age": user.age, "role_id": user.role_id, "last_login": user.last_login}
         elif current_user.role_id == 2:
-            manager_subordinates = session.query(User).options(joinedload(User.subordinates)).filter_by(
-                id=current_user.id).one().subordinates
+            manager_subordinates = session.query(User).options(joinedload(User.subordinates)).filter_by(id=current_user.id).one().subordinates
             if user in manager_subordinates:
                 return {"login": user.login, "age": user.age, "role_id": user.role_id, "last_login": user.last_login}
             else:
-                raise HTTPException(status_code=403,
-                                    detail="Недостаточно прав для просмотра профиля подчиненных другого руководителя")
+                raise HTTPException(status_code=403, detail="Недостаточно прав для просмотра профиля подчиненных другого руководителя")
         else:
             raise HTTPException(status_code=403, detail="Недостаточно прав для просмотра профиля")
     except NoResultFound:
@@ -252,6 +406,16 @@ async def view_profile(user_login: str, current_user: User = Depends(get_current
 
 @app.post("/users/{user_login}/logout", dependencies=[Depends(get_current_active_user)])
 async def logout(user_login: str, current_user: User = Depends(get_current_active_user)):
+    """
+    Завершение сеанса пользователя.
+
+    Параметры:
+    - user_login (str): Логин пользователя.
+    - current_user (User): Объект текущего пользователя.
+
+    Возвращает:
+    - JSON-ответ с сообщением об успешном завершении сеанса.
+    """
     if current_user.login != user_login:
         raise HTTPException(status_code=403, detail="Нельзя завершить сеанс другого пользователя")
     return {"message": "Сеанс завершен успешно"}

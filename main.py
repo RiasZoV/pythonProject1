@@ -7,12 +7,12 @@ from session_management import get_session
 from database import Role, User, Function
 
 
-def admin_actions(user):
+def admin_actions(admin_user):
     """
-    Действия для администратора.
+    Действия администратора.
 
-    Параметры:
-    - user (User): Объект текущего пользователя.
+    :param admin_user: Объект текущего пользователя.
+    :type admin_user: User
     """
     actions = {
         1: "view_profile",
@@ -30,12 +30,15 @@ def admin_actions(user):
         for num, action in actions.items():
             print(f"{num} - {action}")
 
-        action_num = int(input("Введите номер действия: ").strip())
-        action = actions.get(action_num)
+        action_input = input("Введите номер действия: ").strip()
+        if not action_input.isdigit():
+            print("Некорректный ввод. Попробуйте снова.")
+            continue
 
-        if action == "view_profile":
-            view_profile(user)
-        elif action == "add":
+        action_num = int(action_input)
+        if action_num == 1:
+            view_profile(admin_user)
+        elif action_num == 2:
             new_login = input("Введите логин нового пользователя: ").strip()
             new_password = input("Введите пароль нового пользователя: ").strip()
             roles = list_roles()
@@ -44,15 +47,15 @@ def admin_actions(user):
                 print(f"{idx} - {role.name}")
             role_num = int(input("Введите номер роли нового пользователя: ").strip())
             new_role = get_role_by_number(role_num)
-            age = int(input("Введите возраст нового пользователя: ").strip())
-            add_user(new_login, new_password, new_role.name, age)
-        elif action == "delete":
-            user_login = input("Введите логин пользователя для удаления: ").strip()
-            user_to_delete = get_user_by_login(user_login)
+            new_age = int(input("Введите возраст нового пользователя: ").strip())
+            add_user(new_login, new_password, new_role.name, new_age)
+        elif action_num == 3:
+            user_login_to_delete = input("Введите login пользователя для удаления: ").strip()
+            user_to_delete = get_user_by_login(user_login_to_delete)
             delete_user(user_to_delete.id)
-        elif action == "change_role":
-            user_login = input("Введите логин пользователя для изменения роли: ").strip()
-            user_to_change = get_user_by_login(user_login)
+        elif action_num == 4:
+            user_login_to_change = input("Введите login пользователя для изменения роли: ").strip()
+            user_to_change = get_user_by_login(user_login_to_change)
             roles = list_roles()
             print("Доступные роли:")
             for idx, role in enumerate(roles, 1):
@@ -60,19 +63,22 @@ def admin_actions(user):
             role_num = int(input("Введите номер новой роли: ").strip())
             new_role = get_role_by_number(role_num)
             change_user_role(user_to_change.id, new_role.name)
-        elif action == "list":
-            print(list_users())
-        elif action == "change_password":
-            user_login = input("Введите логин пользователя для смены пароля: ").strip()
-            user_to_change = get_user_by_login(user_login)
+        elif action_num == 5:
+            list_users()
+        elif action_num == 6:
+            user_login_to_change_pwd = input("Введите login пользователя для смены пароля: ").strip()
+            user_to_change_pwd = get_user_by_login(user_login_to_change_pwd)
             new_password = input("Введите новый пароль: ").strip()
-            change_password(user_to_change.id, new_password)
-        elif action == "change_subordinates":
-            user_login = input("Введите логин пользователя для изменения подчиненных: ").strip()
-            user_to_change = get_user_by_login(user_login)
+            change_password(user_to_change_pwd.id, new_password)
+        elif action_num == 7:
+            user_login_to_change_sub = input("Введите login пользователя для изменения подчиненных: ").strip()
+            user_to_change_sub = get_user_by_login(user_login_to_change_sub)
             subordinates_logins = input("Введите логины новых подчиненных через запятую: ").strip().split(',')
-            change_subordinates(user_to_change.id, [login.strip() for login in subordinates_logins])
-        elif action == "logout":
+            change_subordinates(
+                user_to_change_sub.id,
+                [login.strip() for login in subordinates_logins]
+            )
+        elif action_num == 8:
             print("Выход из системы.")
             break
         else:
@@ -80,12 +86,12 @@ def admin_actions(user):
     return False  # Return to indicate logout
 
 
-def manager_actions(user):
+def manager_actions(manager_user):
     """
-    Действия для менеджера.
+    Действия менеджера.
 
-    Параметры:
-    - user (User): Объект текущего пользователя.
+    :param manager_user: Объект текущего пользователя.
+    :type manager_user: User
     """
     actions = {
         1: "view_profile",
@@ -99,20 +105,22 @@ def manager_actions(user):
         for num, action in actions.items():
             print(f"{num} - {action}")
 
-        action_num = int(input("Введите номер действия: ").strip())
-        action = actions.get(action_num)
+        action_input = input("Введите номер действия: ").strip()
+        if not action_input.isdigit():
+            print("Некорректный ввод. Попробуйте снова.")
+            continue
 
-        if action == "view_profile":
-            view_profile(user)
-        elif action == "list_subordinates":
-            subordinates = list_subordinates(user.id)
-            print(subordinates)
-        elif action == "change_password":
-            subordinate_login = input("Введите логин подчиненного для смены пароля: ").strip()
+        action_num = int(action_input)
+        if action_num == 1:
+            view_profile(manager_user)
+        elif action_num == 2:
+            list_subordinates(manager_user.id)
+        elif action_num == 3:
+            subordinate_login = input("Введите login подчиненного для смены пароля: ").strip()
             subordinate = get_user_by_login(subordinate_login)
             new_password = input("Введите новый пароль: ").strip()
             change_password(subordinate.id, new_password)
-        elif action == "logout":
+        elif action_num == 4:
             print("Выход из системы.")
             break
         else:
@@ -120,12 +128,12 @@ def manager_actions(user):
     return False  # Return to indicate logout
 
 
-def user_actions(user):
+def user_actions(regular_user):
     """
-    Действия для обычного пользователя.
+    Действия обычного пользователя.
 
-    Параметры:
-    - user (User): Объект текущего пользователя.
+    :param regular_user: Объект текущего пользователя.
+    :type regular_user: User
     """
     actions = {
         1: "view_profile",
@@ -138,16 +146,19 @@ def user_actions(user):
         for num, action in actions.items():
             print(f"{num} - {action}")
 
-        action_num = int(input("Введите номер действия: ").strip())
-        action = actions.get(action_num)
+        action_input = input("Введите номер действия: ").strip()
+        if not action_input.isdigit():
+            print("Некорректный ввод. Попробуйте снова.")
+            continue
 
-        if action == "view_profile":
-            view_profile(user)
-        elif action == "change_password":
+        action_num = int(action_input)
+        if action_num == 1:
+            view_profile(regular_user)
+        elif action_num == 2:
             old_password = input("Введите старый пароль: ").strip()
             new_password = input("Введите новый пароль: ").strip()
-            change_own_password(user.id, old_password, new_password)
-        elif action == "logout":
+            change_own_password(regular_user.id, old_password, new_password)
+        elif action_num == 3:
             print("Выход из системы.")
             break
         else:
@@ -159,62 +170,61 @@ def view_profile(user):
     """
     Просмотр профиля пользователя.
 
-    Параметры:
-    - user (User): Объект текущего пользователя.
+    :param user: Объект текущего пользователя.
+    :type user: User
     """
     print(f"Профиль пользователя:\nЛогин: {user.login}\nВозраст: {user.age}")
 
 
 def initialize_database():
     """
-    Инициализация базы данных.
-    Добавление ролей и функций только при первом запуске.
+    Инициализация базы данных: добавление ролей и функций при первом запуске.
     """
-    session = get_session()
+    local_session = get_session()
 
     # Проверка, существуют ли уже роли и функции
-    if not session.query(Role).first():
+    if not local_session.query(Role).first():
         add_role('Пользователь')
         add_role('Руководитель')
         add_role('Админ')
 
-    if not session.query(Function).first():
+    if not local_session.query(Function).first():
         add_function('Просмотр данных', 1, 'Пользователь')
         add_function('Редактирование данных', 2, 'Руководитель')
         add_function('Управление пользователями', 3, 'Админ')
 
-    session.close()
+    local_session.close()
 
 
 def add_initial_users():
     """
-    Добавление начальных пользователей только при первом запуске.
+    Добавление начальных пользователей при первом запуске.
     """
-    session = get_session()
-    if not session.query(User).first():
+    local_session = get_session()
+    if not local_session.query(User).first():
         print("Заполнение базы данных начальными пользователями...")
         while True:
-            login = input("Введите логин пользователя: ").strip()
-            password = input("Введите пароль пользователя: ").strip()
+            user_login = input("Введите логин пользователя: ").strip()
+            user_password = input("Введите пароль пользователя: ").strip()
             roles = list_roles()
             print("Доступные роли:")
             for idx, role in enumerate(roles, 1):
                 print(f"{idx} - {role.name}")
             role_num = int(input("Введите номер роли пользователя: ").strip())
             role = get_role_by_number(role_num)
-            age = int(input("Введите возраст пользователя: ").strip())
+            user_age = int(input("Введите возраст пользователя: ").strip())
             subordinates_input = None
             if role.name in ['Руководитель', 'Админ']:
                 subordinates_input = input(
                     "Введите логины подчиненных пользователей через запятую (если есть): ").strip()
             subordinates = [s.strip() for s in subordinates_input.split(',')] if subordinates_input else None
 
-            add_user(login, password, role.name, age, subordinates)
+            add_user(user_login, user_password, role.name, user_age, subordinates)
 
             another = input("Хотите добавить еще одного пользователя? (да/нет): ").strip().lower()
             if another != 'да':
                 break
-    session.close()
+    local_session.close()
 
 
 if __name__ == "__main__":
@@ -223,31 +233,34 @@ if __name__ == "__main__":
         add_initial_users()
 
         while True:
-            login = input("Введите логин для входа: ").strip()
-            password = input("Введите пароль для входа: ").strip()
-            user = login_user(login, password)
+            login_name = input("Введите логин для входа: ").strip()
+            login_password = input("Введите пароль для входа: ").strip()
+            current_user = login_user(login_name, login_password)
 
-            if user:
+            if current_user:
                 session = get_session()
-                user = session.query(User).filter_by(login=login).one()
-                if user.role_id == 1:  # Пользователь
-                    if not user_actions(user):
+                current_user = session.query(User).filter_by(login=login_name).one()
+                if current_user.role_id == 1:  # Пользователь
+                    if not user_actions(current_user):
                         next_action = input(
-                            "Введите 'exit' для выхода из программы или 'login' для входа под другим пользователем: ").strip().lower()
+                            "Введите 'exit' для выхода из программы или 'login' для входа под другим пользователем: "
+                        ).strip().lower()
                         if next_action == 'exit':
                             print("Программа завершена.")
                             break
-                elif user.role_id == 2:  # Руководитель
-                    if not manager_actions(user):
+                elif current_user.role_id == 2:  # Руководитель
+                    if not manager_actions(current_user):
                         next_action = input(
-                            "Введите 'exit' для выхода из программы или 'login' для входа под другим пользователем: ").strip().lower()
+                            "Введите 'exit' для выхода из программы или 'login' для входа под другим пользователем: "
+                        ).strip().lower()
                         if next_action == 'exit':
                             print("Программа завершена.")
                             break
-                elif user.role_id == 3:  # Админ
-                    if not admin_actions(user):
+                elif current_user.role_id == 3:  # Админ
+                    if not admin_actions(current_user):
                         next_action = input(
-                            "Введите 'exit' для выхода из программы или 'login' для входа под другим пользователем: ").strip().lower()
+                            "Введите 'exit' для выхода из программы или 'login' для входа под другим пользователем: "
+                        ).strip().lower()
                         if next_action == 'exit':
                             print("Программа завершена.")
                             break

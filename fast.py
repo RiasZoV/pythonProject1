@@ -23,11 +23,11 @@ async def login(request: Request):
     """
     Аутентификация пользователя.
 
-    Параметры:
-    - request (Request): Запрос с JSON-данными, содержащими 'username' и 'password'.
+    :param request: Запрос с JSON-данными, содержащими 'username' и 'password'.
+    :type request: Request
 
-    Возвращает:
-    - JSON-ответ с токеном доступа и типом токена.
+    :return: JSON-ответ с токеном доступа и типом токена.
+    :rtype: dict
     """
     data = await request.json()
     user_data = login_user(data['username'], data['password'])
@@ -40,11 +40,11 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
     """
     Получение текущего пользователя по токену.
 
-    Параметры:
-    - token (str): Токен доступа.
+    :param token: Токен доступа.
+    :type token: str
 
-    Возвращает:
-    - User: Объект пользователя.
+    :return: Объект пользователя.
+    :rtype: User
     """
     session = Session()
     try:
@@ -60,11 +60,11 @@ async def get_current_active_user(current_user: User = Depends(get_current_user)
     """
     Проверка активности текущего пользователя.
 
-    Параметры:
-    - current_user (User): Объект текущего пользователя.
+    :param current_user: Объект текущего пользователя.
+    :type current_user: User
 
-    Возвращает:
-    - User: Объект пользователя.
+    :return: Объект пользователя.
+    :rtype: User
     """
     if current_user:
         return current_user
@@ -75,11 +75,11 @@ async def get_current_admin_user(current_user: User = Depends(get_current_active
     """
     Проверка прав администратора у текущего пользователя.
 
-    Параметры:
-    - current_user (User): Объект текущего пользователя.
+    :param current_user: Объект текущего пользователя.
+    :type current_user: User
 
-    Возвращает:
-    - User: Объект пользователя с правами администратора.
+    :return: Объект пользователя с правами администратора.
+    :rtype: User
     """
     if current_user.role_id != 3:  # Предположим, что 3 - это id роли администратора
         raise HTTPException(status_code=403, detail="Недостаточно прав")
@@ -90,11 +90,11 @@ async def get_current_manager_user(current_user: User = Depends(get_current_acti
     """
     Проверка прав менеджера у текущего пользователя.
 
-    Параметры:
-    - current_user (User): Объект текущего пользователя.
+    :param current_user: Объект текущего пользователя.
+    :type current_user: User
 
-    Возвращает:
-    - User: Объект пользователя с правами менеджера.
+    :return: Объект пользователя с правами менеджера.
+    :rtype: User
     """
     if current_user.role_id not in [2, 3]:  # Предположим, что 2 - это id роли менеджера
         raise HTTPException(status_code=403, detail="Недостаточно прав")
@@ -105,11 +105,11 @@ async def get_current_regular_user(current_user: User = Depends(get_current_acti
     """
     Проверка прав обычного пользователя у текущего пользователя.
 
-    Параметры:
-    - current_user (User): Объект текущего пользователя.
+    :param current_user: Объект текущего пользователя.
+    :type current_user: User
 
-    Возвращает:
-    - User: Объект обычного пользователя.
+    :return: Объект обычного пользователя.
+    :rtype: User
     """
     if current_user.role_id not in [1, 2, 3]:  # Предположим, что 1 - это id роли пользователя
         raise HTTPException(status_code=403, detail="Недостаточно прав")
@@ -121,11 +121,11 @@ async def create_user(request: Request):
     """
     Создание нового пользователя.
 
-    Параметры:
-    - request (Request): Запрос с JSON-данными, содержащими 'login', 'password', 'age', 'role_name'.
+    :param request: Запрос с JSON-данными, содержащими 'login', 'password', 'age', 'role_name'.
+    :type request: Request
 
-    Возвращает:
-    - JSON-ответ с сообщением об успешном создании пользователя.
+    :return: JSON-ответ с сообщением об успешном создании пользователя.
+    :rtype: dict
     """
     data = await request.json()
     required_fields = ["login", "password", "age", "role_name"]
@@ -143,8 +143,8 @@ async def get_users():
     """
     Получение списка всех пользователей.
 
-    Возвращает:
-    - JSON-ответ со списком пользователей.
+    :return: JSON-ответ со списком пользователей.
+    :rtype: list
     """
     session = Session()
     try:
@@ -161,8 +161,8 @@ async def get_roles():
     """
     Получение списка всех ролей.
 
-    Возвращает:
-    - JSON-ответ со списком ролей.
+    :return: JSON-ответ со списком ролей.
+    :rtype: list
     """
     session = Session()
     try:
@@ -179,8 +179,8 @@ async def get_functions():
     """
     Получение списка всех функций.
 
-    Возвращает:
-    - JSON-ответ со списком функций.
+    :return: JSON-ответ со списком функций.
+    :rtype: list
     """
     session = Session()
     try:
@@ -197,11 +197,13 @@ async def get_subordinates(user_login: str, current_user: User = Depends(get_cur
     """
     Получение списка подчиненных пользователя.
 
-    Параметры:
-    - user_login (str): Логин пользователя.
+    :param user_login: Логин пользователя.
+    :type user_login: str
+    :param current_user: Объект текущего пользователя.
+    :type current_user: User
 
-    Возвращает:
-    - JSON-ответ со списком подчиненных.
+    :return: JSON-ответ со списком подчиненных.
+    :rtype: list
     """
     session = Session()
     try:
@@ -225,12 +227,15 @@ async def update_password(user_login: str, request: Request, current_user: User 
     """
     Изменение пароля текущего пользователя.
 
-    Параметры:
-    - user_login (str): Логин пользователя.
-    - request (Request): Запрос с JSON-данными, содержащими 'old_password' и 'new_password'.
+    :param user_login: Логин пользователя.
+    :type user_login: str
+    :param request: Запрос с JSON-данными, содержащими 'old_password' и 'new_password'.
+    :type request: Request
+    :param current_user: Объект текущего пользователя.
+    :type current_user: User
 
-    Возвращает:
-    - JSON-ответ с сообщением об успешном изменении пароля.
+    :return: JSON-ответ с сообщением об успешном изменении пароля.
+    :rtype: dict
     """
     data = await request.json()
     session = Session()
@@ -250,16 +255,17 @@ async def update_password(user_login: str, request: Request, current_user: User 
 
 
 @app.post("/admin/users/{user_login}/change_password/", dependencies=[Depends(get_current_admin_user)])
-async def admin_update_password(user_login: str, request: Request, current_user: User = Depends(get_current_admin_user)):
+async def admin_update_password(user_login: str, request: Request):
     """
     Изменение пароля любого пользователя администратором.
 
-    Параметры:
-    - user_login (str): Логин пользователя.
-    - request (Request): Запрос с JSON-данными, содержащими 'new_password'.
+    :param user_login: Логин пользователя.
+    :type user_login: str
+    :param request: Запрос с JSON-данными, содержащими 'new_password'.
+    :type request: Request
 
-    Возвращает:
-    - JSON-ответ с сообщением об успешном изменении пароля.
+    :return: JSON-ответ с сообщением об успешном изменении пароля.
+    :rtype: dict
     """
     data = await request.json()
     session = Session()
@@ -282,12 +288,13 @@ async def update_role(user_login: str, request: Request):
     """
     Изменение роли пользователя.
 
-    Параметры:
-    - user_login (str): Логин пользователя.
-    - request (Request): Запрос с JSON-данными, содержащими 'new_role_name'.
+    :param user_login: Логин пользователя.
+    :type user_login: str
+    :param request: Запрос с JSON-данными, содержащими 'new_role_name'.
+    :type request: Request
 
-    Возвращает:
-    - JSON-ответ с сообщением об успешном изменении роли.
+    :return: JSON-ответ с сообщением об успешном изменении роли.
+    :rtype: dict
     """
     data = await request.json()
     session = Session()
@@ -310,11 +317,11 @@ async def remove_user(user_login: str):
     """
     Удаление пользователя.
 
-    Параметры:
-    - user_login (str): Логин пользователя.
+    :param user_login: Логин пользователя.
+    :type user_login: str
 
-    Возвращает:
-    - JSON-ответ с сообщением об успешном удалении пользователя.
+    :return: JSON-ответ с сообщением об успешном удалении пользователя.
+    :rtype: dict
     """
     session = Session()
     try:
@@ -336,12 +343,13 @@ async def update_subordinates(user_login: str, request: Request):
     """
     Изменение подчиненных пользователя.
 
-    Параметры:
-    - user_login (str): Логин пользователя.
-    - request (Request): Запрос с JSON-данными, содержащими 'new_subordinates_logins'.
+    :param user_login: Логин пользователя.
+    :type user_login: str
+    :param request: Запрос с JSON-данными, содержащими 'new_subordinates_logins'.
+    :type request: Request
 
-    Возвращает:
-    - JSON-ответ с сообщением об успешном обновлении подчиненных.
+    :return: JSON-ответ с сообщением об успешном обновлении подчиненных.
+    :rtype: dict
     """
     if request.headers.get('content-type') != 'application/json':
         raise HTTPException(status_code=400, detail="Тип содержимого должен быть application/json")
@@ -376,25 +384,40 @@ async def view_profile(user_login: str, current_user: User = Depends(get_current
     """
     Просмотр профиля пользователя.
 
-    Параметры:
-    - user_login (str): Логин пользователя.
-    - current_user (User): Объект текущего пользователя.
+    :param user_login: Логин пользователя.
+    :type user_login: str
+    :param current_user: Объект текущего пользователя.
+    :type current_user: User
 
-    Возвращает:
-    - JSON-ответ с данными профиля пользователя.
+    :return: JSON-ответ с данными профиля пользователя.
+    :rtype: dict
     """
     session = Session()
     try:
         user = session.query(User).options(joinedload(User.subordinates)).filter_by(login=user_login).one()
         print(f"Current user role_id: {current_user.role_id}, requested user role_id: {user.role_id}")
         if current_user.role_id == 3 or current_user.login == user_login:
-            return {"login": user.login, "age": user.age, "role_id": user.role_id, "last_login": user.last_login}
+            return {
+                "login": user.login,
+                "age": user.age,
+                "role_id": user.role_id,
+                "last_login": user.last_login
+            }
         elif current_user.role_id == 2:
-            manager_subordinates = session.query(User).options(joinedload(User.subordinates)).filter_by(id=current_user.id).one().subordinates
+            manager_subordinates = session.query(User).options(
+                joinedload(User.subordinates)).filter_by(id=current_user.id).one().subordinates
             if user in manager_subordinates:
-                return {"login": user.login, "age": user.age, "role_id": user.role_id, "last_login": user.last_login}
+                return {
+                    "login": user.login,
+                    "age": user.age,
+                    "role_id": user.role_id,
+                    "last_login": user.last_login
+                }
             else:
-                raise HTTPException(status_code=403, detail="Недостаточно прав для просмотра профиля подчиненных другого руководителя")
+                raise HTTPException(
+                    status_code=403,
+                    detail="Недостаточно прав для просмотра профиля подчиненных другого руководителя"
+                )
         else:
             raise HTTPException(status_code=403, detail="Недостаточно прав для просмотра профиля")
     except NoResultFound:
@@ -411,16 +434,28 @@ async def logout(user_login: str, current_user: User = Depends(get_current_activ
     """
     Завершение сеанса пользователя.
 
-    Параметры:
-    - user_login (str): Логин пользователя.
-    - current_user (User): Объект текущего пользователя.
+    :param user_login: Логин пользователя.
+    :type user_login: str
+    :param current_user: Объект текущего пользователя.
+    :type current_user: User
 
-    Возвращает:
-    - JSON-ответ с сообщением об успешном завершении сеанса.
+    :return: JSON-ответ с сообщением об успешном завершении сеанса.
+    :rtype: dict
     """
-    if current_user.login != user_login:
-        raise HTTPException(status_code=403, detail="Нельзя завершить сеанс другого пользователя")
-    return {"message": "Сеанс завершен успешно"}
+    session = Session()
+    try:
+        if current_user.login != user_login:
+            raise HTTPException(status_code=403, detail="Нельзя завершить сеанс другого пользователя")
+        user = session.query(User).filter_by(login=user_login).one()
+        session.delete(user)
+        session.commit()
+        return {"message": "Сеанс завершен успешно и пользователь удален"}
+    except NoResultFound:
+        raise HTTPException(status_code=404, detail="Пользователь не найден")
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    finally:
+        session.close()
 
 
 if __name__ == "__main__":
@@ -428,5 +463,3 @@ if __name__ == "__main__":
         uvicorn.run(app, host="127.0.0.1", port=8001)
     except KeyboardInterrupt:
         print("")
-
-

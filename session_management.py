@@ -7,9 +7,7 @@ engine = create_engine(DATABASE_URL)
 
 Session = sessionmaker(bind=engine)
 
+
 def get_session():
     """Получение новой сессии"""
     return Session()
-
-
-
